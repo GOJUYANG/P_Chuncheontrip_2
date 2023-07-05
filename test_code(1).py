@@ -1,16 +1,28 @@
+import pandas as pd
 import folium
-import sqlite3 as sql3
+from folium.map import FitBounds
 
-class JejuMap:
-    con = sql3.connect("../Git_project/database/jeju.db")
-    cur = con.cursor()
+url = 'https://raw.githubusercontent.com/python-visualization/folium/master/examples/data'
+state_geo = f'{url}/us-states.json'
+state_unemployment = f'{url}/US_Unemployment_Oct2012.csv'
+state_data = pd.read_csv(state_unemployment)
 
-    attraction_la = cur.execute("select latitude from ATTRACTION").fetchall()
-    attraction_lo = cur.execute("select longitude from ATTRACTION").fetchall()
+m = folium.Map(location=[48, -102], zoom_start=3)
 
-    for attraction_gps in zip(attraction_la, attraction_lo):
-        print(attraction_gps)
-        print(float(attraction_gps[0][0]))
+folium.Choropleth(
+    geo_data=state_geo,
+    name='choropleth',
+    data=state_data,
+    columns=['State', 'Unemployment'],
+    key_on='feature.id',
+    fill_color='YlGn',
+    fill_opacity=0.7,
+    line_opacity=0.2,
+    legend_name='Unemployment Rate (%)'
+).add_to(m)
 
-    my_map = folium.Map(location=[float(attraction_gps[0][0]),float(attraction_gps[1][0])],zoom_start=15)
-    my_map.save('index.html')
+folium.LayerControl().add_to(m)
+bounds = m.fit_bounds([[52.193636, -2.221575], [52.636878, -1.139759]])
+m.add_child(FitBounds(bounds, padding_top_left=None, padding_bottom_right=None, padding=None, max_zoom=None))
+
+m.show_in_browser()
